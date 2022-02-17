@@ -638,6 +638,7 @@ for prompt in args.image_prompts:
     img = Image.open(path)
     pil_image = img.convert('RGB')
     img = resize_image(pil_image, (sideX, sideY))
+    orig = TF.to_tensor(img).unsqueeze(0).to(device)
     batch = make_cutouts(TF.to_tensor(img).unsqueeze(0).to(device))
     embed = perceptor.encode_image(normalize(batch)).float()
     pMs.append(Prompt(embed, weight, stop).to(device))
@@ -728,7 +729,7 @@ def ascend_txt():
         result.append(F.mse_loss(z, torch.zeros_like(z_orig)) * ((1/torch.tensor(i*2 + 1))*args.init_weight) / 2)
 
     for prompt in pMs:
-        result.append(1. - ssim(z, z_orig) + prompt(iii))
+        result.append(1. - ssim(out, orig) + prompt(iii))
     
     if args.make_video:    
         img = np.array(out.mul(255).clamp(0, 255)[0].cpu().detach().numpy().astype(np.uint8))[:,:,:]
